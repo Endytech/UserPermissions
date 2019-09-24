@@ -76,21 +76,39 @@ class UserPermissions
            }
        }
 
-       if ($currentUser->isSupplier()) {
-           if ($procurement) {
-               if ($procurement->procurement_status == Procurement::STATUS_PLANNED_FOR_EXECUTION || $procurement->procurement_status == Procurement::STATUS_CANCELLED ||
-$procurement->procurement_status == Procurement::STATUS_ARCHIVED || $procurement->procurement_status == Procurement::STATUS_DELETED){
-                   return false;
-               }
-               if ($procurement->procurement_status == Procurement::STATUS_BIDDING ||
-                   ($procurement->procurement_status == Procurement::STATUS_DECISION_MAKING && $currentUser->hasTenderBids($procurement)) ||
-                   (($procurement->procurement_status == Procurement::STATUS_IN_PROGRESS || $procurement->procurement_status == Procurement::STATUS_COMPLETED) && $currentUser->isWinnerTender($procurement))){
-                   return true;
-               }
-           } else {
-               return false;
-           }
-       }
+  if ($currentUser->isSupplier()) {
+            if ($procurement) {
+                switch ($procurement->procurement_status){
+                    case Procurement::STATUS_PLANNED_FOR_EXECUTION:
+                        return false;
+                    case Procurement::STATUS_BIDDING:
+                        return true;
+                    case Procurement::STATUS_DECISION_MAKING:
+                        if ($currentUser->hasTenderBids($procurement)){
+                            return true;
+                        }
+                        break;
+                    case Procurement::STATUS_IN_PROGRESS:
+                        if ($currentUser->isWinnerTender($procurement)){
+                            return true;
+                        }
+                        break;
+                    case Procurement::STATUS_PROCUREMENT_COMPLETED:
+                        if ($currentUser->isWinnerTender($procurement)){
+                            return true;
+                        }
+                        break;
+                    case Procurement::STATUS_CANCELLED:
+                        return false;
+                    case Procurement::STATUS_ARCHIVED:
+                        return false;
+                    case Procurement::STATUS_DELETED:
+                        return false;
+                }
+            } else {
+                return false;
+            }
+        }
        return false;
    }
 
