@@ -1,13 +1,13 @@
 Это advanced yii2, как обычно init, composer, common/config - DB и migrate
 
 Добавляем миграцией role_id в таблицу user
-
+```php
 $this->addColumn('user', 'role_id', 'INTEGER(3)');
-
+```
 Дополнительно миграцией создаю админа admin@cybtronix.com с паролем из ТЗ п.1.3
 
 Добавляем роли и определяющие роль методы в модель user
-
+```php
 namespace common\models;
 ...
 class User extends ActiveRecord implements IdentityInterface
@@ -35,10 +35,13 @@ class User extends ActiveRecord implements IdentityInterface
        return $this->role_id == self::ROLE_SUPPLIER;
    }
 …
+```
 
 Добавляем класс UserPermissions, чтобы сделать его компонентом приложения где user берется как \Yii::$app->user->identity, а остальные данные, если требуется, передаются в функцию при ее вызове.
 common\components\UserPermissions.php
 
+```php
+<?php
 namespace common\components;
 
 class UserPermissions
@@ -92,11 +95,11 @@ $procurement->procurement_status == Procurement::STATUS_ARCHIVED || $procurement
    }
 
 }
-
+```
 
 Добавляем компонент UserPermissions в приложение 
 common\config\main.php
-
+```php
 'components' => [
    'cache' => [
        'class' => 'yii\caching\FileCache',
@@ -105,11 +108,11 @@ common\config\main.php
        'class' => 'common\components\UserPermissions',
    ],
 ],
-
+```
 Теперь вызывая UserPermissions в любом месте можно выполнить проверку 
 
-
+```php
 if (\Yii::$app->UserPermissions->canViewProcurement([])) {
    echo 'Can View';
 }
-
+```
