@@ -2,29 +2,75 @@
 
 namespace common\components;
 
+use common\models\Procurement;
 
 class UserPermissions
 {
+
+    public $currentUser;
+
+// public $rule = [User::ROLE_ADMIN => [
+//     'view' => [
+//     Procurement::STATUS_PLANNED_FOR_EXECUTION => true,
+//     Procurement::STATUS_BIDDING => true,
+//     Procurement::STATUS_DECISION_MAKING => true,
+//     Procurement::STATUS_IN_PROGRESS => true,
+//     Procurement::STATUS_PROCUREMENT_COMPLETED => true,
+//     Procurement::STATUS_CANCELLED => true,
+//     Procurement::STATUS_ARCHIVED => true,
+//     Procurement::STATUS_DELETED => true,
+//     ],
+//     'edit' => [
+//     Procurement::STATUS_PLANNED_FOR_EXECUTION => true,
+//     Procurement::STATUS_BIDDING => true,
+//     Procurement::STATUS_DECISION_MAKING => true,
+//     Procurement::STATUS_IN_PROGRESS => true,
+//     Procurement::STATUS_PROCUREMENT_COMPLETED => true,
+//     Procurement::STATUS_CANCELLED => true,
+//     Procurement::STATUS_ARCHIVED => true,
+//     Procurement::STATUS_DELETED => true,
+//     ],
+//     ],
+//     User::ROLE_ACQUISITION_MANAGER => [
+//         'view' => [
+//             Procurement::STATUS_PLANNED_FOR_EXECUTION => true,
+//             Procurement::STATUS_BIDDING => true,
+//             Procurement::STATUS_DECISION_MAKING => true,
+//             Procurement::STATUS_IN_PROGRESS => true,
+//             Procurement::STATUS_PROCUREMENT_COMPLETED => true,
+//             Procurement::STATUS_CANCELLED => true,
+//             Procurement::STATUS_ARCHIVED => true,
+//             Procurement::STATUS_DELETED => false,
+//         ],
+//     ]
+// ];
+
+    public function getUser()
+    {
+        $this->currentUser = \Yii::$app->user->identity;
+    }
+
     public function canViewProcurement($procurement)
     {
-        $currentUserID = \Yii::$app->user->getId();
-        $currentUser = \Yii::$app->user->identity;
+        $this->getUser();
+
+        $currentUserID = $this->currentUser->id;
 
         if (\Yii::$app->user->isGuest) {
             return false;
         }
 
-        if ($currentUser->isAdmin()) {
+        if ($this->currentUser->isAdmin()) {
             return true;
         }
 
-        if ($currentUser->isSupervisor()) {
+        if ($this->currentUser->isSupervisor()) {
             return true;
         }
 
-        if ($currentUser->isManager()) {
+        if ($this->currentUser->isManager()) {
             if ($procurement) {
-                if ($procurement->procurement_status == Procurement::STATUS_DELETED){
+                if ($procurement->procurement_status == Procurement::STATUS_DELETED) {
                     return false;
                 }
                 if ($procurement->procurement_owner == $currentUserID) {
@@ -35,25 +81,25 @@ class UserPermissions
             }
         }
 
-        if ($currentUser->isSupplier()) {
+        if ($this->currentUser->isSupplier()) {
             if ($procurement) {
-                switch ($procurement->procurement_status){
+                switch ($procurement->Procurement_status) {
                     case Procurement::STATUS_PLANNED_FOR_EXECUTION:
                         return false;
                     case Procurement::STATUS_BIDDING:
                         return true;
                     case Procurement::STATUS_DECISION_MAKING:
-                        if ($currentUser->hasTenderBids($procurement)){
+                        if ($this->currentUser->hasTenderBids($procurement)) {
                             return true;
                         }
                         break;
                     case Procurement::STATUS_IN_PROGRESS:
-                        if ($currentUser->isWinnerTender($procurement)){
+                        if ($this->currentUser->isWinnerTender($procurement)) {
                             return true;
                         }
                         break;
                     case Procurement::STATUS_PROCUREMENT_COMPLETED:
-                        if ($currentUser->isWinnerTender($procurement)){
+                        if ($this->currentUser->isWinnerTender($procurement)) {
                             return true;
                         }
                         break;
@@ -72,4 +118,14 @@ class UserPermissions
         return false;
     }
 
+    public function canUsersViewProcurement($user, $procurement)
+    {
+        $this->currentUser = $user;
+
+        if ($this->currentUser->isAdmin()) {
+            return true;
+        }
+
+        return false;
+    }
 }

@@ -127,10 +127,104 @@ common\config\main.php
    ],
 ],
 ```
-Теперь вызывая UserPermissions в любом месте можно выполнить проверку 
+Теперь вызывая UserPermissions в любом месте приложения можно выполнить проверку 
 
 ```php
 if (\Yii::$app->UserPermissions->canViewProcurement([])) {
    echo 'Can View';
+}
+```
+
+Для контроля доступа к действиям контроллера используем AccessControl, 
+в случае необходимости передать в проверку модель используем matchCallback:
+```php
+class ProcurementController extends Controller
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'actions' => ['index', 'error'],
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ],
+                    [
+                        'actions' => ['create', 'update', 'delete'],
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ],
+                    [
+                        'actions' => ['view'],
+                        'allow' => true,
+                        'roles' => ['@'],
+                        'matchCallback' => function ($rule, $action) {
+                            $procurement=$this->findModel(Yii::$app->request->get('id'));
+                            return \Yii::$app->UserPermissions->canViewProcurement($procurement);
+                        }
+                    ],
+                ],
+            ],
+            'verbs' => [
+                'class' => VerbFilter::className(),
+                'actions' => [
+                    'delete' => ['POST'],
+                ],
+            ],
+        ];
+    }
+```
+
+Для консоли или создать отдельную функцию в UserPermissions и передавать пользователя или можно в 
+конфигурации подключить User и устанавливать пользователей вручную
+console\config\main.php
+```php
+'components' => [
+    'log' => [
+        'targets' => [
+            [
+                'class' => 'yii\log\FileTarget',
+                'levels' => ['error', 'warning'],
+            ],
+        ],
+    ],
+    'user' => [
+        'class' => 'yii\web\User',
+        'identityClass' => 'common\models\User',
+        'enableAutoLogin' => true,
+        'identityCookie' => ['name' => '_identity-console', 'httpOnly' => true],
+    ],
+],
+```
+Задаем вручную в identity в действии консольного контроллера
+```php
+namespace console\controllers;
+
+use common\models\User;
+use yii\console\Controller;
+
+class UserPermissionController extends Controller
+{
+    public function actionTest()
+    {
+        $users = User::find()->all();
+        foreach ($users as $user) {
+
+            \Yii::$app->user->setIdentity($user);
+
+            if (\Yii::$app->UserPermissions->canViewProcurement([])) {
+                echo 'User '. $user->email . ' Can View Procurement';
+            }
+//создать отдельную функцию в UserPermissions и передавать в функцию пользователя
+//            if (\Yii::$app->UserPermissions->canUsersViewProcurement($user, [])) {
+//                echo 'User '. $user->email . ' Can View Procurement';
+//            }
+        }
+    }
 }
 ```

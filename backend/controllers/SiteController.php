@@ -64,6 +64,12 @@ class SiteController extends Controller
         return $this->render('index');
     }
 
+    public function actionTest($id)
+    {
+
+        return $this->render('index');
+    }
+
     /**
      * Login action.
      *
@@ -98,4 +104,5 @@ class SiteController extends Controller
 
         return $this->goHome();
     }
+
 }

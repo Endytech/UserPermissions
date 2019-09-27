@@ -30,6 +30,12 @@ return [
                 ],
             ],
         ],
+        'user' => [
+            'class' => 'yii\web\User',
+            'identityClass' => 'common\models\User',
+            'enableAutoLogin' => true,
+            'identityCookie' => ['name' => '_identity-console', 'httpOnly' => true],
+        ],
     ],
     'params' => $params,
 ];
